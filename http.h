@@ -132,6 +132,7 @@ typedef struct _HTTPConnection {
 
 extern int disableProxy;
 extern AtomPtr proxyName;
+extern int proxyBacklog;
 extern int proxyPort;
 extern int clientTimeout, serverTimeout, serverIdleTimeout;
 extern int bigBufferSize;
@@ -155,7 +156,7 @@ void initHttp(void);
 
 int httpTimeoutHandler(TimeEventHandlerPtr);
 int httpSetTimeout(HTTPConnectionPtr connection, int secs);
-int httpWriteObjectHeaders(char *buf, int offset, int len, 
+int httpWriteObjectHeaders(char *buf, int offset, int len,
                            ObjectPtr object, int from, int to);
 int httpPrintCacheControl(char*, int, int, int, CacheControlPtr);
 char *httpMessage(int) ATTRIBUTE((pure));

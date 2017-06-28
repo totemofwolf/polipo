@@ -72,16 +72,18 @@ preinitHttp()
                              "Whether to be a web server only.");
     CONFIG_VARIABLE_SETTABLE(proxyOffline, CONFIG_BOOLEAN, configIntSetter,
                              "Avoid contacting remote servers.");
-    CONFIG_VARIABLE_SETTABLE(relaxTransparency, CONFIG_TRISTATE, 
+    CONFIG_VARIABLE_SETTABLE(relaxTransparency, CONFIG_TRISTATE,
                              configIntSetter,
                              "Avoid contacting remote servers.");
+    CONFIG_VARIABLE(proxyBacklog, CONFIG_INT,
+                    "The TCP max listen backlog.");
     CONFIG_VARIABLE(proxyPort, CONFIG_INT,
                     "The TCP port on which the proxy listens.");
     CONFIG_VARIABLE(proxyAddress, CONFIG_ATOM_LOWER,
                     "The IP address on which the proxy listens.");
     CONFIG_VARIABLE_SETTABLE(proxyName, CONFIG_ATOM_LOWER, configAtomSetter,
                              "The name by which the proxy is known.");
-    CONFIG_VARIABLE_SETTABLE(clientTimeout, CONFIG_TIME, 
+    CONFIG_VARIABLE_SETTABLE(clientTimeout, CONFIG_TIME,
                              timeoutSetter, "Client-side timeout.");
     CONFIG_VARIABLE_SETTABLE(serverTimeout, CONFIG_TIME,
                              timeoutSetter, "Server-side timeout.");
@@ -272,7 +274,7 @@ httpSetTimeout(HTTPConnectionPtr connection, int secs)
     return 1;
 }
 
-int 
+int
 httpTimeoutHandler(TimeEventHandlerPtr event)
 {
     HTTPConnectionPtr connection = *(HTTPConnectionPtr*)event->data;
@@ -322,7 +324,7 @@ httpWriteObjectHeaders(char *buf, int offset, int len,
             } else {
                 n = snnprintf(buf, n, len,
                               "\r\nContent-Range: bytes %d-%d/%d",
-                              from, to - 1, 
+                              from, to - 1,
                               object->length);
             }
         } else {
@@ -337,13 +339,13 @@ httpWriteObjectHeaders(char *buf, int offset, int len,
             }
         }
     }
-        
+
     if(object->etag) {
         n = snnprintf(buf, n, len, "\r\nETag: \"%s\"", object->etag);
     }
     if((object->flags & OBJECT_LOCAL) || object->date >= 0) {
         n = snnprintf(buf, n, len, "\r\nDate: ");
-        n = format_time(buf, n, len, 
+        n = format_time(buf, n, len,
                         (object->flags & OBJECT_LOCAL) ?
                         current_time.tv_sec : object->date);
         if(n < 0)
@@ -453,7 +455,7 @@ httpPrintCacheControl(char *buf, int offset, int len,
         }
         if(cache_control->s_maxage >= 0) {
             PRINT_SEP();
-            n = snnprintf(buf, n, len, "s-maxage=%d", 
+            n = snnprintf(buf, n, len, "s-maxage=%d",
                           cache_control->s_maxage);
         }
         if(cache_control->min_fresh > 0) {
@@ -629,7 +631,7 @@ httpConnectionDestroyReqbuf(HTTPConnectionPtr connection)
     connection->reqbuf = NULL;
 }
 
-HTTPRequestPtr 
+HTTPRequestPtr
 httpMakeRequest()
 {
     HTTPRequestPtr request;
@@ -782,7 +784,7 @@ httpConnectionUnbigifyReqbuf(HTTPConnectionPtr connection)
     return 1;
 }
 
-HTTPConditionPtr 
+HTTPConditionPtr
 httpMakeCondition()
 {
     HTTPConditionPtr condition;
@@ -808,7 +810,7 @@ httpDestroyCondition(HTTPConditionPtr condition)
         free(condition->ifrange);
     free(condition);
 }
-        
+
 int
 httpCondition(ObjectPtr object, HTTPConditionPtr condition)
 {
@@ -827,7 +829,7 @@ httpCondition(ObjectPtr object, HTTPConditionPtr condition)
     }
 
     if(condition->inms >= 0) {
-        if(object->last_modified < 0 || 
+        if(object->last_modified < 0 ||
            condition->inms >= object->last_modified)
             return rc;
         else
@@ -887,7 +889,7 @@ httpWriteErrorHeaders(char *buf, int size, int offset, int do_body,
                       code >= 400 ? "error" : "result",
                       code, htmlMessage,
                       code, htmlMessage,
-                      code >= 400 ? 
+                      code >= 400 ?
                       "error occurred" :
                       "status was returned");
         if(url_len > 0) {
@@ -904,7 +906,7 @@ httpWriteErrorHeaders(char *buf, int size, int offset, int do_body,
             strftime(timeStr, sizeof(timeStr), "%a, %d %b %Y %H:%M:%S %Z",
                      localtime(&ct));
         }
-        
+
         m = snnprintf(body, m, CHUNK_SIZE,
                       ":<br><br>"
                       "\n<strong>%3d %s</strong></p>"
@@ -1033,7 +1035,7 @@ httpTweakCachability(ObjectPtr object)
        handle, even if Expires or Cache-Control says otherwise.  As to
        known uncacheable replies, we obey Cache-Control and default to
        allowing sharing but not caching. */
-    if(code != 200 && code != 206 && 
+    if(code != 200 && code != 206 &&
        code != 300 && code != 301 && code != 302 && code != 303 &&
        code != 304 && code != 307 &&
        code != 403 && code != 404 && code != 405 && code != 416) {

@@ -71,13 +71,13 @@ do_stream(int operation, int fd, int offset, char *buf, int len,
           void *data)
 {
     assert(len > offset || (operation & (IO_END | IO_IMMEDIATE)));
-    return schedule_stream(operation, fd, offset, 
+    return schedule_stream(operation, fd, offset,
                            NULL, 0, buf, len, NULL, 0, NULL, 0, NULL,
                            handler, data);
 }
 
 FdEventHandlerPtr
-do_stream_2(int operation, int fd, int offset, 
+do_stream_2(int operation, int fd, int offset,
             char *buf, int len, char *buf2, int len2,
             int (*handler)(int, FdEventHandlerPtr, StreamRequestPtr),
             void *data)
@@ -89,7 +89,7 @@ do_stream_2(int operation, int fd, int offset,
 }
 
 FdEventHandlerPtr
-do_stream_3(int operation, int fd, int offset, 
+do_stream_3(int operation, int fd, int offset,
             char *buf, int len, char *buf2, int len2, char *buf3, int len3,
             int (*handler)(int, FdEventHandlerPtr, StreamRequestPtr),
             void *data)
@@ -107,7 +107,7 @@ do_stream_h(int operation, int fd, int offset,
             void *data)
 {
     assert(hlen + len > offset || (operation & (IO_END | IO_IMMEDIATE)));
-    return schedule_stream(operation, fd, offset, 
+    return schedule_stream(operation, fd, offset,
                            header, hlen, buf, len, NULL, 0, NULL, 0, NULL,
                            handler, data);
 }
@@ -120,7 +120,7 @@ do_stream_buf(int operation, int fd, int offset, char **buf_location, int len,
     assert((len > offset || (operation & (IO_END | IO_IMMEDIATE)))
            && len <= CHUNK_SIZE);
     return schedule_stream(operation, fd, offset,
-                           NULL, 0, *buf_location, len, 
+                           NULL, 0, *buf_location, len,
                            NULL, 0, NULL, 0, buf_location,
                            handler, data);
 }
@@ -184,7 +184,7 @@ schedule_stream(int operation, int fd, int offset,
     request.len = len;
     request.buf2 = buf2;
     request.len2 = len2;
-    if((operation & IO_CHUNKED) || 
+    if((operation & IO_CHUNKED) ||
        (!(request.operation & (IO_BUF3 | IO_BUF_LOCATION)) && hlen > 0)) {
         assert(offset == 0);
         request.offset = -hlen;
@@ -195,10 +195,10 @@ schedule_stream(int operation, int fd, int offset,
     }
     request.handler = handler;
     request.data = data;
-    event = makeFdEvent(fd, 
+    event = makeFdEvent(fd,
                         (operation & IO_MASK) == IO_WRITE ?
-                        POLLOUT : POLLIN, 
-                        do_scheduled_stream, 
+                        POLLOUT : POLLIN,
+                        do_scheduled_stream,
                         sizeof(StreamRequestRec), &request);
     if(!event) {
         done = (*handler)(-ENOMEM, NULL, &request);
@@ -212,7 +212,7 @@ schedule_stream(int operation, int fd, int offset,
             free(event);
             return NULL;
         }
-    } 
+    }
 
     if(operation & IO_IMMEDIATE) {
         assert(hlen == 0 && !(operation & IO_CHUNKED));
@@ -237,8 +237,8 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
     int chunk_header_len;
     char chunk_header[10];
     int len12 = request->len + request->len2;
-    int len123 = 
-        request->len + request->len2 + 
+    int len123 =
+        request->len + request->len2 +
         ((request->operation & IO_BUF3) ? request->u.b.len3 : 0);
 
     if(status) {
@@ -249,7 +249,7 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
     i = 0;
 
     if(request->offset < 0) {
-        assert((request->operation & (IO_MASK | IO_BUF3 | IO_BUF_LOCATION)) == 
+        assert((request->operation & (IO_MASK | IO_BUF3 | IO_BUF_LOCATION)) ==
                IO_WRITE);
         if(request->operation & IO_CHUNKED) {
             chunk_header_len = chunkHeaderLen(len123);
@@ -270,7 +270,7 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
                 iov[i].iov_base = chunk_header;
                 iov[i].iov_len = chunk_header_len;
             } else {
-                iov[i].iov_base = chunk_header + 
+                iov[i].iov_base = chunk_header +
                     chunk_header_len + request->offset;
                 iov[i].iov_len = -request->offset;
             }
@@ -279,7 +279,7 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
     }
 
     if(request->len > 0) {
-        if(request->buf == NULL && 
+        if(request->buf == NULL &&
            (request->operation & IO_BUF_LOCATION)) {
             assert(*request->u.l.buf_location == NULL);
             request->buf = *request->u.l.buf_location = get_chunk();
@@ -344,7 +344,7 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
             iov[i].iov_len = l;
             i++;
         } else if(request->offset < len123 + l) {
-            iov[i].iov_base = 
+            iov[i].iov_base =
                 (char*)endChunkTrailer + request->offset - len123;
             iov[i].iov_len = l - request->offset + len123;
             i++;
@@ -354,12 +354,12 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
     assert(i > 0);
 
     if((request->operation & IO_MASK) == IO_WRITE) {
-        if(i > 1) 
+        if(i > 1)
             rc = WRITEV(request->fd, iov, i);
         else
             rc = WRITE(request->fd, iov[0].iov_base, iov[0].iov_len);
     } else {
-        if(i > 1) 
+        if(i > 1)
             rc = READV(request->fd, iov, i);
         else
             rc = READ(request->fd, iov[0].iov_base, iov[0].iov_len);
@@ -386,7 +386,7 @@ do_scheduled_stream(int status, FdEventHandlerPtr event)
 int
 streamRequestDone(StreamRequestPtr request)
 {
-    int len123 = 
+    int len123 =
         request->len + request->len2 +
         ((request->operation & IO_BUF3) ? request->u.b.len3 : 0);
 
@@ -560,8 +560,8 @@ do_scheduled_connect(int status, FdEventHandlerPtr event)
     }
 
  again:
-    host = (HostAddressPtr)&addr->string[1 + 
-                                         request->index * 
+    host = (HostAddressPtr)&addr->string[1 +
+                                         request->index *
                                          sizeof(HostAddressRec)];
     if(host->af != request->af) {
         int newfd;
@@ -618,7 +618,7 @@ do_scheduled_connect(int status, FdEventHandlerPtr event)
     default:
         abort();
     }
-        
+
     if(rc >= 0 || errno == EISCONN) {
         done = request->handler(1, event, request);
         assert(done);
@@ -675,7 +675,7 @@ schedule_accept(int fd,
     request.fd = fd;
     request.handler = handler;
     request.data = data;
-    event = registerFdEvent(fd, POLLIN, 
+    event = registerFdEvent(fd, POLLIN,
                             do_scheduled_accept, sizeof(request), &request);
     if(!event) {
         done = (*handler)(-ENOMEM, NULL, NULL);
@@ -807,8 +807,8 @@ create_listener(char *address, int port,
         assert(done);
         return NULL;
     }
-        
-    rc = listen(fd, 1024);
+
+    rc = listen(fd, proxyBacklog);
     if(rc < 0) {
         do_log_error(L_ERROR, errno, "Couldn't listen");
         CLOSE(fd);
@@ -1163,9 +1163,3 @@ netAddressMatch(int fd, NetAddressPtr list)
     }
     return 0;
 }
-
-
-        
-        
-
-    
